@@ -50,7 +50,7 @@ class OauthHandler
 
         // first call
         if (!array_key_exists('oauth_verifier', $_GET) && !array_key_exists('oauth_token', $_GET)) {
-            //session_start();
+            session_start();
             unset($this->params['oauth_token']);
             unset($this->params['oauth_verifier']);
 
