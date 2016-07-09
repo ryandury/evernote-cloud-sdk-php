@@ -5,6 +5,9 @@ namespace Evernote\Auth;
 use Evernote\Exception\AuthorizationDeniedException;
 use Illuminate\Http\Request;
 use Log;
+use Redirect;
+use EDAM\NoteStore\NoteFilter;
+use EDAM\NoteStore\NotesMetadataResultSpec;
 
 class OauthHandler
 {
@@ -55,16 +58,15 @@ class OauthHandler
             $temporaryCredentials = $this->getTemporaryCredentials();
             session(['oauth_token_secret' => $temporaryCredentials['oauth_token_secret']]);
 
-            $authorizationUrl = 'Location: '
-                . $this->getBaseUrl('OAuth.action?oauth_token=')
+            $authorizationUrl = $this->getBaseUrl('OAuth.action?oauth_token=')
                 . $temporaryCredentials['oauth_token'];
             Log::info('Auth URL' . $authorizationUrl);
             if ($this->supportLinkedSandbox) {
                 $authorizationUrl .= '&supportLinkedSandbox=true';
             }
             Log::info('Trying to redirect');
-            return header($authorizationUrl);
 
+            return Redirect::to($authorizationUrl);
 
             // the user declined the authorization
         } elseif (!array_key_exists('oauth_verifier', $_GET) && array_key_exists('oauth_token', $_GET)) {
@@ -73,12 +75,15 @@ class OauthHandler
         } else {
 
             $this->token_secret =  session('oauth_token_secret');
+            session(['oauth_token' => $_GET['oauth_token']]);
 
             $this->params['oauth_token']    = $_GET['oauth_token'];
             $this->params['oauth_verifier'] = $_GET['oauth_verifier'];
             unset($this->params['oauth_callback']);
 
-            return $this->getTemporaryCredentials();
+            $credentials = $this->getTemporaryCredentials();
+            session(['token' => $credentials['oauth_token']]);
+            return $credentials;
         }
 
     }
