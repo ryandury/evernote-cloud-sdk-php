@@ -3,6 +3,7 @@
 namespace Evernote\Auth;
 
 use Evernote\Exception\AuthorizationDeniedException;
+use Illuminate\Http\Request;
 
 class OauthHandler
 {
@@ -44,19 +45,14 @@ class OauthHandler
 
         $this->consumer_secret = $consumer_secret;
 
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-
         // first call
         if (!array_key_exists('oauth_verifier', $_GET) && !array_key_exists('oauth_token', $_GET)) {
-            session_start();
+
             unset($this->params['oauth_token']);
             unset($this->params['oauth_verifier']);
 
             $temporaryCredentials = $this->getTemporaryCredentials();
-
-            $_SESSION['oauth_token_secret'] = $temporaryCredentials['oauth_token_secret'];;
+            session(['oauth_token_secret' => $temporaryCredentials['oauth_token_secret']]);
 
             $authorizationUrl = 'Location: '
                 . $this->getBaseUrl('OAuth.action?oauth_token=')
@@ -73,8 +69,8 @@ class OauthHandler
             throw new AuthorizationDeniedException('Authorization declined.');
         //the user authorized the app
         } else {
-            session_start();
-            $this->token_secret = $_SESSION['oauth_token_secret'];
+
+            $this->token_secret =  session('oauth_token_secret');
 
             $this->params['oauth_token']    = $_GET['oauth_token'];
             $this->params['oauth_verifier'] = $_GET['oauth_verifier'];
