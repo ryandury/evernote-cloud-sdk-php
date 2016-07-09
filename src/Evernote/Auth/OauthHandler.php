@@ -4,6 +4,7 @@ namespace Evernote\Auth;
 
 use Evernote\Exception\AuthorizationDeniedException;
 use Illuminate\Http\Request;
+use Log;
 
 class OauthHandler
 {
@@ -47,7 +48,7 @@ class OauthHandler
 
         // first call
         if (!array_key_exists('oauth_verifier', $_GET) && !array_key_exists('oauth_token', $_GET)) {
-
+            Log::info('First call..');
             unset($this->params['oauth_token']);
             unset($this->params['oauth_verifier']);
 
@@ -57,17 +58,18 @@ class OauthHandler
             $authorizationUrl = 'Location: '
                 . $this->getBaseUrl('OAuth.action?oauth_token=')
                 . $temporaryCredentials['oauth_token'];
-
+            Log::info('Auth URL' . $authorizationUrl);
             if ($this->supportLinkedSandbox) {
                 $authorizationUrl .= '&supportLinkedSandbox=true';
             }
+            Log::info('Trying to redirect');
+            return header($authorizationUrl);
 
-            header($authorizationUrl);
 
-        // the user declined the authorization
+            // the user declined the authorization
         } elseif (!array_key_exists('oauth_verifier', $_GET) && array_key_exists('oauth_token', $_GET)) {
             throw new AuthorizationDeniedException('Authorization declined.');
-        //the user authorized the app
+            //the user authorized the app
         } else {
 
             $this->token_secret =  session('oauth_token_secret');
